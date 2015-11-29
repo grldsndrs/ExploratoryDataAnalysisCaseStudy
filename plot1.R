@@ -25,8 +25,10 @@
 # year, the table contains number of tons of PM2.5 emitted from a specific type
 # of source for the entire year. Here are the first few rows.
 #
-# ##     fips      SCC Pollutant Emissions  type year ## 4  09001 10100401
-# PM25-PRI    15.714 POINT 1999 ## 8  09001 10100404  PM25-PRI   234.178 POINT
+#
+##     fips      SCC Pollutant Emissions  type year
+## 4  09001 10100401 PM25-PRI    15.714 POINT 1999
+## 8  09001 10100404  PM25-PRI   234.178 POINT
 # 1999 ## 12 09001 10100501  PM25-PRI     0.128 POINT 1999 ## 16 09001 10200401
 # PM25-PRI     2.036 POINT 1999 ## 20 09001 10200504  PM25-PRI     0.388 POINT
 # 1999 ## 24 09001 10200602  PM25-PRI     1.490 POINT 1999 fips: A five-digit
@@ -54,12 +56,15 @@
 # You can read each of the two files using the readRDS() function in R. For
 # example, reading in each file can be done with the following code:
 #
-# ## This first line will likely take a few seconds. Be patient! NEI <-
-# readRDS("summarySCC_PM25.rds") SCC <-
-# readRDS("Source_Classification_Code.rds") as long as each of those files is in
+library(dplyr)
+# ## This first line will likely take a few seconds. Be patient!
+NEI <-readRDS("summarySCC_PM25.rds")
+SCC <-readRDS("Source_Classification_Code.rds")
+# as long as each of those files is in
 # your current working directory (check by calling dir() and see if those files
 # are in the listing).
 #
+
 # Assignment
 #
 # The overall goal of this assignment is to explore the National Emissions
@@ -73,9 +78,38 @@
 # analysis. For each question/task you will need to make a single plot. Unless
 # specified, you can use any plotting system in R to make your plot.
 
-# 1.Have total emissions from PM2.5 decreased in the United States from 1999 to
-# 2008? Using the base plotting system, make a plot showing the total PM2.5
-# emission from all sources for each of the years 1999, 2002, 2005, and 2008.
+# 1.Have total emissions from PM2.5 decreased in the United States from 1999 to 2008?
+# Question Key Ingrediatents ----------------------------------------------
+# a) total emissions
+#       how many different kinds of sources (10,000~) (size of data point)
+#         from what types (4) (symbol)
+#       from what geographic locations (thousands) (x axis by state)
+
+# b) total emissions (sum of emissions by tpye ) with respect to time (y axis)
+# c) plot a with respect to b in a 2 D plot
+
+# Using the base plotting system, make a plot showing the total PM2.5 emission from all sources for each of the years 1999, 2002, 2005, and 2008.
+
+# Plot state vs total emissions
+
+#create table with fips, SCC, type and Pollutants are factors
+NEI[,1]<-as.factor(NEI[,1])
+NEI[,2]<-as.factor(NEI[,2])
+NEI[,3]<-as.factor(NEI[,3])
+NEI[,5]<-as.factor(NEI[,5])
+NEI[,6]<-as.factor(NEI[,6])
+
+# Count the number of distint classiifcations for the PM-25 pollutant for each type in each fips in each year
+# group so that type is at the extreme of the group
+gall<-group_by(NEI,Pollutant,year,fips,type)
+# get a count of the distinct Classes per type
+sm<-summarise(gall,count=n_distinct(SCC))
+# merge counts back to original data set
+mr<-merge(gall,sm,by = intersect(names(sm), names(gall)))
+
+
+
+
 
 # Making and Submitting Plots
 #
