@@ -57,6 +57,9 @@
 # example, reading in each file can be done with the following code:
 #
 library(dplyr)
+library(RColorBrewer)
+library(scales)
+library(outliers)
 # ## This first line will likely take a few seconds. Be patient!
 NEI <-readRDS("summarySCC_PM25.rds")
 SCC <-readRDS("Source_Classification_Code.rds")
@@ -107,9 +110,67 @@ sm<-summarise(gall,count=n_distinct(SCC))
 # merge counts back to original data set
 mr<-merge(gall,sm,by = intersect(names(sm), names(gall)))
 
+d <- as.Date(as.character(mr$year),"%Y%")
+
+outlier(mr$Emissions)
+mrro1=rm.outlier(mr$Emissions,fill =TRUE)
+outlier(mrro1)
+mrro1=rm.outlier(mrro1,fill =TRUE)
+outlier(mrro1)
+mrro1=rm.outlier(mrro1,fill =TRUE)
+outlier(mrro1)
+mrro1=rm.outlier(mrro1,fill =TRUE)
+outlier(mrro1)
+mr$Emissions=rm.outlier(mrro1,fill =TRUE)
+
+colsBg<-brewer.pal(length(levels(mr$year)), "Spectral")
+palBg<- colorRampPalette(colsBg,alpha=.1)
 
 
+colsLn<-brewer.pal(length(levels(mr$year)), "Pastel2")
+palLn<- colorRampPalette(colsLn,alpha=.1)
 
+mr$Color <- factor(mr$year, levels=levels(mr$year), labels=palLn(length(levels(mr$year))))
+mr$Symbol <- factor(mr$type, levels=levels(mr$type), labels=c(21,22,23,24))
+
+# group by year to get mean by year
+gyear<-group_by(NEI,Pollutant,year)
+# get a count of the distinct Classes per type
+sm<-summarise(gyear,mean=mean(Emissions),med=median(Emissions))
+# merge counts back to original data set
+mr<-merge(mr,sm,by = intersect(names(sm), names(mr)))
+
+plot(
+  as.numeric(mr$fips),
+  mr$Emissions,
+  pch=as.integer(mr$Symbol),
+  cex=10*scale(mr$count),
+  col = as.character(mr$Color),
+  bg = palBg(10*scale(mr$mean-mr$median)),
+  lwd = 10*scale(mr$mean)
+  ,ylim = c(0,100)
+)
+legend("topright",pch=c(21,22,23,24,21,22,23,24),
+       col=palLn(length(levels(mr$year))),legend=c(levels(mr$year),levels(mr$type)))
+
+
+# colsBg<-brewer.pal(length(levels(mr$type)), "Pastel1")
+# palBg<- colorRampPalette(colsBg,alpha=.1)
+#
+# colsLn<-brewer.pal(length(levels(mr$year)), "Pastel2")
+# palLn<- colorRampPalette(colsLn,alpha=.1)
+#
+# plot(
+#   as.numeric(mr$fips),
+#   mr$Emissions,
+#   pch=c(21,22,23,24),
+#   cex=5*scale(mr$count),
+#   col = palLn(length(levels(mr$year))),
+#   bg = palBg(length(levels(mr$type))),
+#   lwd = 10*scale(as.numeric(mr$year))
+#   ,ylim = c(0,100)
+# )
+# legend("topright",pch=c(21,22,23,24),col=palLn(length(levels(mr$year))),legend=levels(mr$year))
 
 # Making and Submitting Plots
 #
