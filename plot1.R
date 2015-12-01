@@ -110,7 +110,8 @@ sm<-summarise(gall,count=n_distinct(SCC))
 # merge counts back to original data set
 mr<-merge(gall,sm,by = intersect(names(sm), names(gall)))
 
-d <- as.Date(as.character(mr$year),"%Y%")
+
+# d <- as.Date(as.character(mr$year),"%Y%")
 
 outlier(mr$Emissions)
 mrro1=rm.outlier(mr$Emissions,fill =TRUE)
@@ -123,36 +124,74 @@ mrro1=rm.outlier(mrro1,fill =TRUE)
 outlier(mrro1)
 mr$Emissions=rm.outlier(mrro1,fill =TRUE)
 
-colsBg<-brewer.pal(length(levels(mr$year)), "Spectral")
-palBg<- colorRampPalette(colsBg,alpha=.1)
+mr[,"EmissionsFactors"]<-as.factor(mr[,"Emissions"])
+
+#pallette for the fill of the symbols
+numberOfColsForEmis <- length(levels(mr$EmissionsFactors))#round(max(range(mr$Emissions,na.rm = TRUE)))
+numberOfColsForYrs <- length(levels(mr$year))
+emisPalInt<- colorRampPalette(topo.colors(numberOfColsForYrs))
+yearPalInt<- colorRampPalette(topo.colors(numberOfColsForYrs))
+#palSymFillColsInt<- (emisPalInt(numberOfColsForEmis))
+palSymLnColsInt<- (yearPalInt(numberOfColsForYrs))
+palSymFillColsInt<- (emisPalInt(numberOfColsForYrs))
 
 
-colsLn<-brewer.pal(length(levels(mr$year)), "Pastel2")
-palLn<- colorRampPalette(colsLn,alpha=.1)
-
-mr$Color <- factor(mr$year, levels=levels(mr$year), labels=palLn(length(levels(mr$year))))
+mr$LnColor <- factor(mr$year, levels=levels(mr$year), labels=palSymLnColsInt)
+# Warning is becuase there are not enough levels for each indidual data point
+mr$BgColor <- factor(mr$year, levels=levels(mr$year), labels=palSymFillColsInt)
 mr$Symbol <- factor(mr$type, levels=levels(mr$type), labels=c(21,22,23,24))
 
 # group by year to get mean by year
 gyear<-group_by(NEI,Pollutant,year)
 # get a count of the distinct Classes per type
-sm<-summarise(gyear,mean=mean(Emissions),med=median(Emissions))
+sm<-summarise(gyear,mean=mean(Emissions,na.rm = TRUE),med=median(Emissions,na.rm = TRUE) )
 # merge counts back to original data set
 mr<-merge(mr,sm,by = intersect(names(sm), names(mr)))
 
-plot(
-  as.numeric(mr$fips),
-  mr$Emissions,
-  pch=as.integer(mr$Symbol),
-  cex=10*scale(mr$count),
-  col = as.character(mr$Color),
-  bg = palBg(10*scale(mr$mean-mr$median)),
-  lwd = 10*scale(mr$mean)
-  ,ylim = c(0,100)
-)
-legend("topright",pch=c(21,22,23,24,21,22,23,24),
-       col=palLn(length(levels(mr$year))),legend=c(levels(mr$year),levels(mr$type)))
+scale01 <- function(v){
+  if (min(v)==0) {
+    addt = .000001
+  }
+  else{
+    addt= .0000001*min(v)
+  }
+  #
+  #
+  (v-min(v))/(max(v)+addt-min(v))
+}
 
+mr<-group_by(mr,Pollutant,year,fips,med)
+
+
+# end <- length(mr$Emissions)
+#end <- 100
+# plot(
+#   as.numeric(mr$fips[1:end]),
+#   mr$Emissions[1:end],
+#   pch=as.numeric(levels(mr$Symbol[1:end])[mr$Symbol[1:end]]),
+#   lwd=2.5*scale01(mr$med)[1:end],
+#   col = alpha(mr$LnColor[1:end], .1),#as.character(mr$LnColor[1:end]),
+#   bg = alpha(mr$BgColor[1:end], .1*scale01(mr$count)[1:end]),#as.character(mr$BgColor[1:end]),
+#   cex = 5*1*abs(scale01(mr$mean)[1:end])
+#   ,ylim = c(0,10000))
+
+plot(
+    as.numeric(mr$fips),
+    mr$Emissions,
+    pch=as.numeric(levels(mr$Symbol[1:end])[mr$Symbol]),
+    lwd=2.5*scale01(mr$med),
+    col = alpha(mr$LnColor, .1),
+    bg = alpha(mr$BgColor, .1*scale01(mr$count)[1:end]),
+    cex = 5*1*abs(scale01(mr$mean))
+    ,ylim = c(0,10000))
+
+
+
+legend("topright",pch=c(21,22,23,24), text.col = "black",
+       ncol = 1,legend=(levels(mr$type)))
+
+legend("topleft", text.col = palSymLnColsInt,
+       ncol = 1,col=palSymLnColsInt,legend=c(levels(mr$year)))
 
 # colsBg<-brewer.pal(length(levels(mr$type)), "Pastel1")
 # palBg<- colorRampPalette(colsBg,alpha=.1)
