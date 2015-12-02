@@ -105,7 +105,7 @@ NEI[,6]<-as.factor(NEI[,6])
 
 gyear<-group_by(NEI,Pollutant,year)
 
-pct <- .2
+pct <- 1
 gyearSm<-summarise(gyear,count=n())
 
 runningSum0<-0;
@@ -215,11 +215,39 @@ plot(
     as.numeric(mr$fips),
     mr$Emissions,
     pch=as.numeric(levels(mr$Symbol)[mr$Symbol]),
-    lwd=6*(1-scale01(mr$med)),
-    col = alpha(mr$LnColor, 1-scale01(mr$count)),
-    bg = alpha(mr$BgColor, .01*scale01(mr$count)),
+    lwd=1*(scale01(mr$med)),
+    col = alpha(mr$LnColor, scale01(mr$count)),
+    bg = alpha(mr$BgColor, scale01(mr$count)),
     cex = 1*10*scale01(mr$mean)
-    ,ylim = c(0,10000),ylab = "Emissions",xlab = "fips")
+    ,ylab = "Total Emissions",xlab = "County Code"
+    # ,ylim = c(0,10000)
+    )
+
+
+
+legend("topright",pch=c(21,22,23,24), text.col = "black",
+       ncol = 1,legend=(levels(mr$type)))
+
+legend("topleft", text.col = palSymLnColsInt,
+       ncol = 1,col=palSymLnColsInt,legend=c(levels(mr$year)))
+dev.off()
+
+# Name each of the plot files as plot1.png, plot2.png, etc.
+png(filename = paste0(getwd(),"/plot1_alt.png"), width = 480, height = 480)
+#(filename = paste0(getwd(),"/plot1.svg"), width = 7, height = 7)
+# with a width of 480 pixels and a height of 480 pixels.
+
+plot(
+  as.numeric(mr$fips),
+  mr$Emissions,
+  pch=as.numeric(levels(mr$Symbol)[mr$Symbol]),
+  lwd=1*(scale01(mr$med)),
+  col = alpha(mr$LnColor, 1-scale01(mr$count)),
+  bg = alpha(mr$BgColor, 1-scale01(mr$count)),
+  cex = 1*10*scale01(mr$mean)
+  ,ylab = "Total Emissions",xlab = "County Code"
+  # ,ylim = c(0,10000)
+)
 
 
 
