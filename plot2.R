@@ -101,8 +101,9 @@ NEI[,6]<-as.factor(NEI[,6])
 # filter the data for Baltimore fips
 # Get number of points in each year
 
-gyear<-filter(NEI,fips=="24510")%>%group_by(Pollutant,year)
-gyearSm<-summarise(gyear,count=n())
+gyear<-filter(.data = NEI,fips=="24510")%>%group_by(Pollutant,year)
+gyearSm<-summarise(gyear,countPerYr=n(),TotalEmissions=sum(Emissions,na.rm = TRUE))
+gyear<-merge(gyear,gyearSm,by = intersect(names(gyearSm), names(gyear)))
 
 # Get smaller set of data to work with by building a random
 # sample of numbers between year boundries
@@ -111,7 +112,7 @@ runningSum1<-1;
 set.seed<-1
 pct <- 1
 listSubSetIndices<-floor(unlist(
-  sapply(gyearSm$count, function(cnt) {
+  sapply(gyearSm$countPerYr, function(cnt) {
     listOfInd<-runif(floor(pct*cnt),runningSum1,cnt+runningSum0)
     runningSum0<<-runningSum0+cnt
     runningSum1<<-runningSum1+cnt
@@ -166,15 +167,16 @@ mr<-merge(mr,sm,by = intersect(names(sm), names(mr)))
 
 # Scale function used to scale data for graph aestetics
 scale01 <- function(v){
-  if (min(v,na.rm = TRUE)==0) {
+  if (max(v,na.rm = TRUE)-min(v,na.rm = TRUE)==0) {
     addt = .0000000001
   }
   else{
-    addt= .0000000001*min(v,na.rm = TRUE)
+    addt= 0
   }
   (v-min(v,na.rm = TRUE))/(max(v,na.rm = TRUE)+addt-min(v,na.rm = TRUE))
 }
 
+#mr<-filter(mr,year=="2008")%>%group_by(Pollutant,year)
 mr<-group_by(mr,Pollutant,year)
 
 
@@ -187,24 +189,34 @@ mr<-group_by(mr,Pollutant,year)
 # Name each of the plot files as plot1.png, plot2.png, etc.
 png(filename = paste0(getwd(),"/plot2.png"), width = 480, height = 480)
 # with a width of 480 pixels and a height of 480 pixels.
+par(mar=c(5,5,5,4)+.1)
 
 plot(
   as.numeric(mr$fips),
   mr$Emissions,
   pch=as.numeric(levels(mr$Symbol)[mr$Symbol]),
-  lwd=1*(scale01(mr$med)),
-  col = alpha(mr$LnColor, scale01(mr$count)),
+  lwd=5*1*(scale01(mr$Emissions/mr$TotalEmissions)),
+  col = alpha(mr$LnColor, 1-scale01(mr$count)),
   bg = alpha(mr$BgColor, scale01(mr$count)),
-  cex = 1*10*scale01(mr$mean)
-  ,ylab = "Total Emissions",xlab = "County Code"
-  # ,ylim = c(0,10000)
+  cex = 3*(1+2*scale01(mr$TotalEmissions))
+  ,ylab = "Emissions",xlab = "County Code"
+   #,ylim = c(0,1)
 )
 
+mtext(c("size ~ Total Emissions"),side = 3,line=2)
+mtext(c("line width ~ Emission/Total Emissions"),side = 3,line=1)
+mtext(c("opacity ~ #Distinct Source Classes"),side = 3,line=0)
+
 legend("topright",pch=c(21,22,23,24), text.col = "black",
-       ncol = 1,legend=(levels(mr$type)))
+       ncol = 1,legend=c(levels(mr$type)),bty = "n")
 
 legend("topleft", text.col = palSymLnColsInt,
-       ncol = 1,col=palSymLnColsInt,legend=c(levels(mr$year)))
+       ncol = 1,col=palSymLnColsInt,legend=c(levels(mr$year)),bty = "n")
+
+#   legend("bottom", text.col = "Black",
+#        ncol = 1,legend=c("size ~ Total Emissions",
+#                          "line width ~ Emission/Total Emissions",
+#                          "opacity ~ Distinct Source Classes"),bty = "n")
 dev.off()
 #
 # Create a separate R code file (plot1.R, plot2.R, etc.) that constructs the
