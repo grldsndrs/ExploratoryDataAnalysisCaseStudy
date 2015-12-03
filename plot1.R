@@ -28,11 +28,13 @@
 #
 ##     fips      SCC Pollutant Emissions  type year
 ## 4  09001 10100401 PM25-PRI    15.714 POINT 1999
-## 8  09001 10100404  PM25-PRI   234.178 POINT
-# 1999 ## 12 09001 10100501  PM25-PRI     0.128 POINT 1999 ## 16 09001 10200401
-# PM25-PRI     2.036 POINT 1999 ## 20 09001 10200504  PM25-PRI     0.388 POINT
-# 1999 ## 24 09001 10200602  PM25-PRI     1.490 POINT 1999 fips: A five-digit
-# number (represented as a string) indicating the U.S. county
+## 8  09001 10100404  PM25-PRI   234.178 POINT 1999
+## 12 09001 10100501  PM25-PRI     0.128 POINT 1999
+## 16 09001 10200401  PM25-PRI     2.036 POINT 1999
+## 20 09001 10200504  PM25-PRI     0.388 POINT 1999
+## 24 09001 10200602  PM25-PRI     1.490 POINT 1999
+
+# fips: A five-digit number (represented as a string) indicating the U.S. county
 #
 # SCC: The name of the source as indicated by a digit string (see source code
 # classification table)
@@ -103,20 +105,19 @@ NEI[,3]<-as.factor(NEI[,3])
 NEI[,5]<-as.factor(NEI[,5])
 NEI[,6]<-as.factor(NEI[,6])
 
+# Get number of points in each year
 gyear<-group_by(NEI,Pollutant,year)
-
-pct <- 1
 gyearSm<-summarise(gyear,count=n())
 
+# Get smaller set of data to work with by building a random
+# sample of numbers between year boundries
 runningSum0<-0;
 runningSum1<-1;
 set.seed<-1
+pct <- 1
 listSubSetIndices<-floor(unlist(
   sapply(gyearSm$count, function(cnt) {
     listOfInd<-runif(floor(pct*cnt),runningSum1,cnt+runningSum0)
-
-    #listOfInd<-c(range(listOfInd),runningSum1,cnt+runningSum0)
-
     runningSum0<<-runningSum0+cnt
     runningSum1<<-runningSum1+cnt
     listOfInd
@@ -126,7 +127,7 @@ plot(listSubSetIndices)
 #t<-listSubSetIndices
 # gyear[listSubSetIndices,]
 
-
+# Remove outliers
 outlier(gyear$Emissions)
 mrro1=rm.outlier(gyear$Emissions,fill =TRUE)
 outlier(mrro1)
@@ -148,18 +149,10 @@ sm<-summarise(gall,count=n_distinct(SCC))
 # merge counts back to original data set
 mr<-merge(gall,sm,by = intersect(names(sm), names(gall)))
 
-
-# d <- as.Date(as.character(mr$year),"%Y%")
-
-
-# mr[,"EmissionsFactors"]<-as.factor(mr[,"Emissions"])
-
-#pallette for the fill of the symbols
-# numberOfColsForEmis <- length(levels(mr$EmissionsFactors))#round(max(range(mr$Emissions,na.rm = TRUE)))
+#pallette for the line and fill of the symbols
 numberOfColsForYrs <- length(levels(mr$year))
 emisPalInt<- colorRampPalette(topo.colors(numberOfColsForYrs))
 yearPalInt<- colorRampPalette(topo.colors(numberOfColsForYrs))
-#palSymFillColsInt<- (emisPalInt(numberOfColsForEmis))
 palSymLnColsInt<- (yearPalInt(numberOfColsForYrs))
 palSymFillColsInt<- (emisPalInt(numberOfColsForYrs))
 
@@ -174,41 +167,24 @@ gtype<-group_by(mr,Pollutant,year,type)
 # get a count of the distinct Classes per type
 sm<-summarise(gtype,mean=mean(Emissions,na.rm = TRUE),med=median(Emissions,na.rm = TRUE) )
 # merge counts back to original data set
-
 mr<-merge(mr,sm,by = intersect(names(sm), names(mr)))
 
+# Scale function used to scale data for graph aestetics
 scale01 <- function(v){
   if (min(v,na.rm = TRUE)==0) {
-    addt = .000001
+    addt = .0000000001
   }
   else{
-    addt= .0000001*min(v,na.rm = TRUE)
+    addt= .0000000001*min(v,na.rm = TRUE)
   }
-  #
-  #
   (v-min(v,na.rm = TRUE))/(max(v,na.rm = TRUE)+addt-min(v,na.rm = TRUE))
 }
 
 mr<-group_by(mr,Pollutant,year)
 
-#mr0<-gyear[listSubSetIndices,]
-
-# end <- length(mr$Emissions)
-#end <- 100
-# plot(
-#   as.numeric(mr$fips[1:end]),
-#   mr$Emissions[1:end],
-#   pch=as.numeric(levels(mr$Symbol[1:end])[mr$Symbol[1:end]]),
-#   lwd=2.5*scale01(mr$med)[1:end],
-#   col = alpha(mr$LnColor[1:end], .1),#as.character(mr$LnColor[1:end]),
-#   bg = alpha(mr$BgColor[1:end], .1*scale01(mr$count)[1:end]),#as.character(mr$BgColor[1:end]),
-#   cex = 5*1*abs(scale01(mr$mean)[1:end])
-#   ,ylim = c(0,10000))
 # Save it to a PNG file
-#
 # Name each of the plot files as plot1.png, plot2.png, etc.
 png(filename = paste0(getwd(),"/plot1.png"), width = 480, height = 480)
-#(filename = paste0(getwd(),"/plot1.svg"), width = 7, height = 7)
 # with a width of 480 pixels and a height of 480 pixels.
 
 plot(
@@ -223,8 +199,6 @@ plot(
     # ,ylim = c(0,10000)
     )
 
-
-
 legend("topright",pch=c(21,22,23,24), text.col = "black",
        ncol = 1,legend=(levels(mr$type)))
 
@@ -233,48 +207,8 @@ legend("topleft", text.col = palSymLnColsInt,
 dev.off()
 
 # Name each of the plot files as plot1.png, plot2.png, etc.
-png(filename = paste0(getwd(),"/plot1_alt.png"), width = 480, height = 480)
-#(filename = paste0(getwd(),"/plot1.svg"), width = 7, height = 7)
+png(filename = paste0(getwd(),"/plot1_alt.png"), width = 480, height = 480)#(filename = paste0(getwd(),"/plot1.svg"), width = 7, height = 7)
 # with a width of 480 pixels and a height of 480 pixels.
-
-plot(
-  as.numeric(mr$fips),
-  mr$Emissions,
-  pch=as.numeric(levels(mr$Symbol)[mr$Symbol]),
-  lwd=1*(scale01(mr$med)),
-  col = alpha(mr$LnColor, 1-scale01(mr$count)),
-  bg = alpha(mr$BgColor, 1-scale01(mr$count)),
-  cex = 1*10*scale01(mr$mean)
-  ,ylab = "Total Emissions",xlab = "County Code"
-  # ,ylim = c(0,10000)
-)
-
-
-
-legend("topright",pch=c(21,22,23,24), text.col = "black",
-       ncol = 1,legend=(levels(mr$type)))
-
-legend("topleft", text.col = palSymLnColsInt,
-       ncol = 1,col=palSymLnColsInt,legend=c(levels(mr$year)))
-dev.off()
-
-# colsBg<-brewer.pal(length(levels(mr$type)), "Pastel1")
-# palBg<- colorRampPalette(colsBg,alpha=.1)
-#
-# colsLn<-brewer.pal(length(levels(mr$year)), "Pastel2")
-# palLn<- colorRampPalette(colsLn,alpha=.1)
-#
-# plot(
-#   as.numeric(mr$fips),
-#   mr$Emissions,
-#   pch=c(21,22,23,24),
-#   cex=5*scale(mr$count),
-#   col = palLn(length(levels(mr$year))),
-#   bg = palBg(length(levels(mr$type))),
-#   lwd = 10*scale(as.numeric(mr$year))
-#   ,ylim = c(0,100)
-# )
-# legend("topright",pch=c(21,22,23,24),col=palLn(length(levels(mr$year))),legend=levels(mr$year))
 
 # Making and Submitting Plots
 #
