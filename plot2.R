@@ -177,9 +177,15 @@ scale01 <- function(v){
 
 mr<-group_by(mr,Pollutant,year)
 
+
+# Making and Submitting Plots
+#
+# For each plot you should
+#
+# Construct the plot and save it to a PNG file.
 # Save it to a PNG file
 # Name each of the plot files as plot1.png, plot2.png, etc.
-png(filename = paste0(getwd(),"/plot1.png"), width = 480, height = 480)
+png(filename = paste0(getwd(),"/plot2.png"), width = 480, height = 480)
 # with a width of 480 pixels and a height of 480 pixels.
 
 plot(
@@ -200,16 +206,6 @@ legend("topright",pch=c(21,22,23,24), text.col = "black",
 legend("topleft", text.col = palSymLnColsInt,
        ncol = 1,col=palSymLnColsInt,legend=c(levels(mr$year)))
 dev.off()
-
-# Name each of the plot files as plot1.png, plot2.png, etc.
-png(filename = paste0(getwd(),"/plot1_alt.png"), width = 480, height = 480)#(filename = paste0(getwd(),"/plot1.svg"), width = 7, height = 7)
-# with a width of 480 pixels and a height of 480 pixels.
-
-# Making and Submitting Plots
-#
-# For each plot you should
-#
-# Construct the plot and save it to a PNG file.
 #
 # Create a separate R code file (plot1.R, plot2.R, etc.) that constructs the
 # corresponding plot, i.e. code in plot1.R constructs the plot1.png plot. Your
