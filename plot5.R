@@ -25,12 +25,16 @@
 # year, the table contains number of tons of PM2.5 emitted from a specific type
 # of source for the entire year. Here are the first few rows.
 #
-# ##     fips      SCC Pollutant Emissions  type year ## 4  09001 10100401
-# PM25-PRI    15.714 POINT 1999 ## 8  09001 10100404  PM25-PRI   234.178 POINT
-# 1999 ## 12 09001 10100501  PM25-PRI     0.128 POINT 1999 ## 16 09001 10200401
-# PM25-PRI     2.036 POINT 1999 ## 20 09001 10200504  PM25-PRI     0.388 POINT
-# 1999 ## 24 09001 10200602  PM25-PRI     1.490 POINT 1999 fips: A five-digit
-# number (represented as a string) indicating the U.S. county
+#
+##     fips      SCC Pollutant Emissions  type year
+## 4  09001 10100401 PM25-PRI    15.714 POINT 1999
+## 8  09001 10100404  PM25-PRI   234.178 POINT 1999
+## 12 09001 10100501  PM25-PRI     0.128 POINT 1999
+## 16 09001 10200401  PM25-PRI     2.036 POINT 1999
+## 20 09001 10200504  PM25-PRI     0.388 POINT 1999
+## 24 09001 10200602  PM25-PRI     1.490 POINT 1999
+
+# fips: A five-digit number (represented as a string) indicating the U.S. county
 #
 # SCC: The name of the source as indicated by a digit string (see source code
 # classification table)
@@ -54,12 +58,19 @@
 # You can read each of the two files using the readRDS() function in R. For
 # example, reading in each file can be done with the following code:
 #
-# ## This first line will likely take a few seconds. Be patient! NEI <-
-# readRDS("summarySCC_PM25.rds") SCC <-
-# readRDS("Source_Classification_Code.rds") as long as each of those files is in
+library(dplyr)
+library(RColorBrewer)
+library(scales)
+library(outliers)
+library(ggplot2)
+# ## This first line will likely take a few seconds. Be patient!
+NEI <-readRDS("summarySCC_PM25.rds")
+SCC <-readRDS("Source_Classification_Code.rds")
+# as long as each of those files is in
 # your current working directory (check by calling dir() and see if those files
 # are in the listing).
 #
+
 # Assignment
 #
 # The overall goal of this assignment is to explore the National Emissions
@@ -73,16 +84,139 @@
 # analysis. For each question/task you will need to make a single plot. Unless
 # specified, you can use any plotting system in R to make your plot.
 
-# 5.How have emissions from motor vehicle sources changed from 1999–2008 in
-# Baltimore City?
+
+
+# 5.How have emissions from motor vehicle sources changed from 1999–2008 in Baltimore City?
+
+
+#create table with fips, SCC, type and Pollutants are factors
+
+NEI[,1]<-as.factor(NEI[,1])
+NEI[,2]<-as.factor(NEI[,2])
+NEI[,3]<-as.factor(NEI[,3])
+NEI[,5]<-as.factor(NEI[,5])
+NEI[,6]<-as.factor(NEI[,6])
+
+# filter the data for Baltimore fips
+# Get number of points in each year
+# filter the data for coal combustion related sources
+
+fSCC<-filter(.data = SCC,grepl(".*\\b[Mm]obile\\b.*",SCC$EI.Sector) )
+gyear<-NEI[NEI$SCC %in% fSCC$SCC,]%>%filter(fips=="24510")%>%group_by(Pollutant,year)
+gyearSm<-summarise(gyear,countPerYr=n(),TotalEmissions=sum(Emissions,na.rm = TRUE))
+gyear<-merge(gyear,gyearSm,by = intersect(names(gyearSm), names(gyear)))
+
+# Get smaller set of data to work with by building a random
+# sample of numbers between year boundries
+runningSum0<-0;
+# runningSum1<-1;
+set.seed<-1
+pct <- 1
+listSubSetIndices<-floor(unlist(
+  sapply(gyearSm$countPerYr, function(cnt) {
+    listOfInd<-runif(floor(pct*cnt),runningSum0+1,cnt+runningSum0)
+    runningSum0<<-runningSum0+cnt
+    # runningSum1<<-runningSum1+cnt
+    listOfInd
+  },simplify = TRUE))
+)
+plot(listSubSetIndices)
+#t<-listSubSetIndices
+# gyear[listSubSetIndices,]
+
+# # Remove outliers
+outlier(gyear$Emissions)
+gyear$Emissions=rm.outlier(gyear$Emissions,fill =TRUE)
+# mrro1=rm.outlier(gyear$Emissions,fill =TRUE)
+# outlier(mrro1)
+# mrro1=rm.outlier(mrro1,fill =TRUE)
+# outlier(mrro1)
+# mrro1=rm.outlier(mrro1,fill =TRUE)
+# outlier(mrro1)
+# mrro1=rm.outlier(mrro1,fill =TRUE)
+# outlier(mrro1)
+# gyear$Emissions=rm.outlier(mrro1,fill =TRUE)
+
+mr<-gyear[listSubSetIndices,]
+
+# Count the number of distint classiifcations for the PM-25 pollutant for each type in each fips in each year
+# group so that type is at the extreme of the group
+gall<-group_by(mr,Pollutant,year,fips,type)
+# get a count of the distinct Classes per type
+sm<-summarise(gall,count=n_distinct(SCC))
+# merge counts back to original data set
+mr<-merge(gall,sm,by = intersect(names(sm), names(gall)))
+
+#pallette for the line and fill of the symbols
+numberOfColsForYrs <- length(levels(mr$year))
+emisPalInt<- colorRampPalette(topo.colors(numberOfColsForYrs))
+yearPalInt<- colorRampPalette(topo.colors(numberOfColsForYrs))
+palSymLnColsInt<- (yearPalInt(numberOfColsForYrs))
+palSymFillColsInt<- (emisPalInt(numberOfColsForYrs))
+
+
+mr$LnColor <- factor(mr$year, levels=levels(mr$year), labels=palSymLnColsInt)
+# Warning is becuase there are not enough levels for each indidual data point
+mr$BgColor <- factor(mr$year, levels=levels(mr$year), labels=palSymFillColsInt)
+mr$Symbol <- factor(mr$type, levels=levels(mr$type), labels=c(21,22,23,24))
+
+# group by year to get mean by year
+gtype<-group_by(mr,Pollutant,year,type)
+# get a count of the distinct Classes per type
+sm<-summarise(gtype,mean=mean(Emissions,na.rm = TRUE),med=median(Emissions,na.rm = TRUE) )
+# merge counts back to original data set
+mr<-merge(mr,sm,by = intersect(names(sm), names(mr)))
+
+# Scale function used to scale data for graph aestetics
+scale01 <- function(v){
+  if (max(v,na.rm = TRUE)-min(v,na.rm = TRUE)==0) {
+    addt = .0000000001
+  }
+  else{
+    addt= 0
+  }
+  (v-min(v,na.rm = TRUE))/(max(v,na.rm = TRUE)+addt-min(v,na.rm = TRUE))
+}
+
+#mr<-filter(mr,year=="2008")%>%group_by(Pollutant,year)
+mr<-group_by(mr,Pollutant,year)
 
 
 # Making and Submitting Plots
+TotalEmissions<-(scale01(mr$TotalEmissions))
+PercentEmissions<-(scale01(mr$Emissions/mr$TotalEmissions))
+DistinctSourceClassCount<-mr$count
+yr<-as.numeric(levels(mr$year)[mr$year])
 #
 # For each plot you should
 #
 # Construct the plot and save it to a PNG file.
-#
+# Save it to a PNG file
+# Name each of the plot files as plot1.png, plot2.png, etc.
+par(mar=c(5,5,5,4)+.1)
+
+png(filename = paste0(getwd(),"/plot5.png"), width = 480, height = 480)
+# with a width of 480 pixels and a height of 480 pixels.
+
+p<-ggplot(data=mr, aes(x=year, y=Emissions, shape=type,colour=year)) +
+  scale_colour_manual(name="Year",values=palSymFillColsInt)  +
+  scale_fill_gradientn(colours = palSymFillColsInt,guide = FALSE) +
+  geom_point(aes(size=TotalEmissions,
+                 colour=year,
+                 fill=yr,
+                 alpha=DistinctSourceClassCount)) +
+  scale_alpha(name = "opacity ~ #Distinct Source Classes") +
+  theme(legend.position="top") +
+  scale_size(name="Total\nEmissions", range=c(5,15)) +
+  scale_shape_manual(name="Type",values=c(21,22,23,24)) +
+  theme(legend.background = element_rect()) +
+  theme(panel.background=element_rect(fill = "white")) +
+  scale_x_discrete(name="Baltimaore mototr vehicle sources") +
+  scale_y_continuous(name="Emmisions")
+print(p)
+dev.off()
+
+
 # Create a separate R code file (plot1.R, plot2.R, etc.) that constructs the
 # corresponding plot, i.e. code in plot1.R constructs the plot1.png plot. Your
 # code file should include code for reading the data so that the plot can be

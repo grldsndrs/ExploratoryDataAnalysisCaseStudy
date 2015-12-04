@@ -87,12 +87,6 @@ SCC <-readRDS("Source_Classification_Code.rds")
 # 4.Across the United States, how have emissions from coal combustion-related
 # sources changed from 1999–2008?
 
-# Which of these four sources have seen decreases in emissions from 1999–2008 for Baltimore City?
-# Which have seen increases in emissions from 1999–2008?
-
-# Use the ggplot2 plotting system to make a plot answer this question.
-
-
 #create table with fips, SCC, type and Pollutants are factors
 
 NEI[,1]<-as.factor(NEI[,1])
