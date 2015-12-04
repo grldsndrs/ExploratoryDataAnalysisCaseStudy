@@ -214,7 +214,7 @@ mr<-group_by(mr,Pollutant,year)
      scale_shape_manual(name="Type",values=c(21,22,23,24)) +
      theme(legend.background = element_rect()) +
      theme(panel.background=element_rect(fill = "white")) +
-     scale_x_discrete(name="Type") +
+     scale_x_discrete(name="Baltimaore") +
      scale_y_continuous(name="Emmisions")
 print(p)
 dev.off()
