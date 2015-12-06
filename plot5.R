@@ -158,7 +158,7 @@ palSymFillColsInt<- (emisPalInt(numberOfColsForYrs))
 mr$LnColor <- factor(mr$year, levels=levels(mr$year), labels=palSymLnColsInt)
 # Warning is becuase there are not enough levels for each indidual data point
 mr$BgColor <- factor(mr$year, levels=levels(mr$year), labels=palSymFillColsInt)
-mr$Symbol <- factor(mr$type, levels=levels(mr$type), labels=c(21,22,23,24))
+mr$Symbol <- factor(mr$type, levels=levels(mr$type), labels=c(24,22,25,21))
 
 # group by year to get mean by year
 gtype<-group_by(mr,Pollutant,year,type)
@@ -205,13 +205,13 @@ p<-ggplot(data=mr, aes(x=year, y=Emissions, shape=type,colour=year)) +
                  colour=year,
                  fill=yr,
                  alpha=DistinctSourceClassCount)) +
-  scale_alpha(name = "opacity ~ #Distinct Source Classes") +
+  scale_alpha(name = "opacity ~ # Distinct Source Classes") +
   theme(legend.position="top") +
   scale_size(name="Total\nEmissions", range=c(5,15)) +
-  scale_shape_manual(name="Type",values=c(21,22,23,24)) +
+  scale_shape_manual(name="Type",values=c(24,22,25,21)) +
   theme(legend.background = element_rect()) +
   theme(panel.background=element_rect(fill = "white")) +
-  scale_x_discrete(name="Baltimaore mototr vehicle sources") +
+  scale_x_discrete(name="Baltimaore motor vehicle sources") +
   scale_y_continuous(name="Emmisions")
 print(p)
 dev.off()

@@ -156,7 +156,7 @@ palSymFillColsInt<- (emisPalInt(numberOfColsForYrs))
 mr$LnColor <- factor(mr$year, levels=levels(mr$year), labels=palSymLnColsInt)
 # Warning is becuase there are not enough levels for each indidual data point
 mr$BgColor <- factor(mr$year, levels=levels(mr$year), labels=palSymFillColsInt)
-mr$Symbol <- factor(mr$type, levels=levels(mr$type), labels=c(21,22,23,24))
+mr$Symbol <- factor(mr$type, levels=levels(mr$type), labels=c(24,22,25,21))
 
 # group by year to get mean by year
 gtype<-group_by(mr,Pollutant,year,type)
@@ -207,7 +207,7 @@ mtext(c("size ~ Total Emissions"),side = 3,line=2)
 mtext(c("line width ~ Emission/Total Emissions"),side = 3,line=1)
 mtext(c("opacity ~ #Distinct Source Classes"),side = 3,line=0)
 
-legend("topright",pch=c(21,22,23,24), text.col = "black",
+legend("topright",pch=c(24,22,25,21), text.col = "black",
        ncol = 1,legend=c(levels(mr$type)),bty = "n")
 
 legend("topleft", text.col = palSymLnColsInt,

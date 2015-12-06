@@ -161,7 +161,7 @@ palSymFillColsInt<- (emisPalInt(numberOfColsForYrs))
 mr$LnColor <- factor(mr$year, levels=levels(mr$year), labels=palSymLnColsInt)
 # Warning is becuase there are not enough levels for each indidual data point
 mr$BgColor <- factor(mr$year, levels=levels(mr$year), labels=palSymFillColsInt)
-mr$Symbol <- factor(mr$type, levels=levels(mr$type), labels=c(21,22,23,24))
+mr$Symbol <- factor(mr$type, levels=levels(mr$type), labels=c(24,22,25,21))
 
 # group by year to get mean by year
 gtype<-group_by(mr,Pollutant,year,type)
@@ -211,7 +211,7 @@ mr<-group_by(mr,Pollutant,year)
      scale_alpha(name = "opacity ~ #Distinct Source Classes") +
      theme(legend.position="top") +
      scale_size(name="Total\nEmissions", range=c(5,15)) +
-     scale_shape_manual(name="Type",values=c(21,22,23,24)) +
+     scale_shape_manual(name="Type",values=c(24,22,25,21)) +
      theme(legend.background = element_rect()) +
      theme(panel.background=element_rect(fill = "white")) +
      scale_x_discrete(name="Baltimaore") +
